@@ -42,10 +42,16 @@
                   "u32": 1
                 },
                 {
-                  "i128": "200"
-                },
-                {
-                  "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                  "map": [
+                    {
+                      "key": {
+                        "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                      },
+                      "val": {
+                        "i128": "200"
+                      }
+                    }
+                  ]
                 },
                 {
                   "u32": 100
@@ -79,7 +85,16 @@
                   "u32": 1
                 },
                 {
-                  "i128": "300"
+                  "map": [
+                    {
+                      "key": {
+                        "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                      },
+                      "val": {
+                        "i128": "300"
+                      }
+                    }
+                  ]
                 },
                 {
                   "bool": true
@@ -130,6 +145,9 @@
                 },
                 {
                   "u32": 1
+                },
+                {
+                  "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
                 }
               ]
             }
@@ -277,14 +295,6 @@
                   },
                   {
                     "key": {
-                      "symbol": "price"
-                    },
-                    "val": {
-                      "i128": "300"
-                    }
-                  },
-                  {
-                    "key": {
                       "symbol": "refund_deadline"
                     },
                     "val": {
@@ -309,10 +319,19 @@
                   },
                   {
                     "key": {
-                      "symbol": "token"
+                      "symbol": "token_prices"
                     },
                     "val": {
-                      "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                      "map": [
+                        {
+                          "key": {
+                            "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                          },
+                          "val": {
+                            "i128": "300"
+                          }
+                        }
+                      ]
                     }
                   }
                 ]

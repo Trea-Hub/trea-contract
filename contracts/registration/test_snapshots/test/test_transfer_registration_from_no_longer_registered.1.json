@@ -64,19 +64,25 @@
                   "u32": 1
                 },
                 {
-                  "i128": "200"
-                },
-                {
-                  "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                  "map": [
+                    {
+                      "key": {
+                        "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                      },
+                      "val": {
+                        "i128": "200"
+                      }
+                    }
+                  ]
                 },
                 {
                   "u32": 100
                 },
                 {
-                  "bool": true
+                  "bool": false
                 },
                 {
-                  "u64": "0"
+                  "u64": "100"
                 }
               ]
             }
@@ -99,6 +105,9 @@
                 },
                 {
                   "u32": 1
+                },
+                {
+                  "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
                 }
               ]
             }
@@ -244,18 +253,10 @@
                   },
                   {
                     "key": {
-                      "symbol": "price"
-                    },
-                    "val": {
-                      "i128": "200"
-                    }
-                  },
-                  {
-                    "key": {
                       "symbol": "refund_deadline"
                     },
                     "val": {
-                      "u64": "0"
+                      "u64": "100"
                     }
                   },
                   {
@@ -271,15 +272,24 @@
                       "symbol": "self_refund_allowed"
                     },
                     "val": {
-                      "bool": true
+                      "bool": false
                     }
                   },
                   {
                     "key": {
-                      "symbol": "token"
+                      "symbol": "token_prices"
                     },
                     "val": {
-                      "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                      "map": [
+                        {
+                          "key": {
+                            "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                          },
+                          "val": {
+                            "i128": "200"
+                          }
+                        }
+                      ]
                     }
                   }
                 ]
@@ -312,7 +322,24 @@
               },
               "durability": "persistent",
               "val": {
-                "i128": "200"
+                "map": [
+                  {
+                    "key": {
+                      "symbol": "amount"
+                    },
+                    "val": {
+                      "i128": "200"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "token"
+                    },
+                    "val": {
+                      "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
+                    }
+                  }
+                ]
               }
             }
           },

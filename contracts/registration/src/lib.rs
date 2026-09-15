@@ -228,7 +228,10 @@ impl EventRegistration {
             client.transfer(&attendee, &contract_address, &price);
         }
 
-        event.registered += 1;
+        event.registered = event
+            .registered
+            .checked_add(1)
+            .expect("registered overflow");
         env.storage()
             .persistent()
             .set(&DataKey::Event(event_id), &event);
@@ -284,7 +287,10 @@ impl EventRegistration {
             client.transfer(&contract_address, &attendee, &payment.amount);
         }
 
-        event.registered -= 1;
+        event.registered = event
+            .registered
+            .checked_sub(1)
+            .expect("registered underflow");
         env.storage()
             .persistent()
             .set(&DataKey::Event(event_id), &event);

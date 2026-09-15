@@ -509,3 +509,35 @@ fn test_pause_and_unpause() {
     client.register(&attendee, &1, &token.address);
     assert_eq!(token.balance(&attendee), 800);
 }
+
+#[test]
+#[should_panic(expected = "registered underflow")]
+fn test_registered_underflow_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let organizer = Address::generate(&env);
+    let attendee = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token, token_admin_client) = create_token_contract(&env, &token_admin);
+
+    token_admin_client.mint(&attendee, &1000);
+
+    let prices = create_token_prices(&env, &token.address, 200);
+    client.create_event(&organizer, &1, &prices, &100, &true, &0);
+
+    client.register(&attendee, &1, &token.address);
+
+    // Artificially corrupt the state by setting registered to 0
+    env.as_contract(&contract_id, || {
+        let mut event: Event = env.storage().persistent().get(&DataKey::Event(1)).unwrap();
+        event.registered = 0;
+        env.storage().persistent().set(&DataKey::Event(1), &event);
+    });
+
+    // Refunding the attendee will attempt to decrement 0 by 1, triggering the panic
+    client.refund(&attendee, &1, &attendee);
+}

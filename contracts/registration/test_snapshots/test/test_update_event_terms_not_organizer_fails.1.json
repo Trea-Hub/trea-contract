@@ -42,10 +42,16 @@
                   "u32": 1
                 },
                 {
-                  "i128": "200"
-                },
-                {
-                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                  "map": [
+                    {
+                      "key": {
+                        "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                      },
+                      "val": {
+                        "i128": "200"
+                      }
+                    }
+                  ]
                 },
                 {
                   "u32": 100
@@ -154,14 +160,6 @@
                   },
                   {
                     "key": {
-                      "symbol": "price"
-                    },
-                    "val": {
-                      "i128": "200"
-                    }
-                  },
-                  {
-                    "key": {
                       "symbol": "refund_deadline"
                     },
                     "val": {
@@ -186,10 +184,19 @@
                   },
                   {
                     "key": {
-                      "symbol": "token"
+                      "symbol": "token_prices"
                     },
                     "val": {
-                      "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                      "map": [
+                        {
+                          "key": {
+                            "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
+                          },
+                          "val": {
+                            "i128": "200"
+                          }
+                        }
+                      ]
                     }
                   }
                 ]

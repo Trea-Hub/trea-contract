@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::testutils::{Address as _, Ledger};
+use soroban_sdk::testutils::{Address as _, Events, Ledger};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::Map;
 
@@ -315,6 +315,7 @@ fn test_unsupported_token_fails() {
 }
 
 #[test]
+fn test_events_emitted() {
 fn test_update_event_terms_before_registration_succeeds() {
     let env = Env::default();
     env.mock_all_auths();

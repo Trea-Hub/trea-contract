@@ -45,6 +45,7 @@ pub enum DataKey {
 pub struct EventRegistration;
 
 #[contractimpl]
+#[allow(deprecated)] // Using deprecated publish as requested by the issue description
 impl EventRegistration {
     #[allow(clippy::too_many_arguments)]
     pub fn create_event(
@@ -69,6 +70,10 @@ impl EventRegistration {
         env.storage()
             .persistent()
             .set(&DataKey::Event(event_id), &event);
+        env.events().publish(
+            (Symbol::new(&env, "create_event"), event_id),
+            event.organizer.clone(),
+        );
     }
 
     pub fn update_event_terms(
@@ -108,6 +113,9 @@ impl EventRegistration {
         organizer.require_auth();
         env.storage()
             .persistent()
+            .set(&DataKey::CheckedIn(event_id, attendee.clone()), &true);
+        env.events()
+            .publish((Symbol::new(&env, "check_in"), event_id), attendee);
             .set(&DataKey::CheckedIn(event_id, attendee), &true);
     }
 
@@ -201,6 +209,9 @@ impl EventRegistration {
             .set(&DataKey::Event(event_id), &event);
         env.storage()
             .persistent()
+            .remove(&DataKey::Registered(event_id, attendee.clone()));
+        env.events()
+            .publish((Symbol::new(&env, "refund"), event_id), attendee);
             .remove(&DataKey::Registered(event_id, attendee));
     }
 

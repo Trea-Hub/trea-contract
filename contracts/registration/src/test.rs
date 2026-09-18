@@ -105,6 +105,55 @@ fn test_payout_moves_escrowed_funds_to_organizer() {
 }
 
 #[test]
+fn test_duplicate_registration_fails() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let organizer = Address::generate(&env);
+    let attendee = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token, token_admin_client) = create_token_contract(&env, &token_admin);
+
+    token_admin_client.mint(&attendee, &1000);
+
+    let prices = create_token_prices(&env, &token.address, 200);
+    client.create_event(&organizer, &1, &prices, &100, &true, &0);
+    client.register(&attendee, &1, &token.address);
+
+    let err = client
+        .try_register(&attendee, &1, &token.address)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::AlreadyRegistered);
+}
+
+#[test]
+fn test_check_in_requires_registered_attendee() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let organizer = Address::generate(&env);
+    let attendee = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token, _) = create_token_contract(&env, &token_admin);
+
+    let prices = create_token_prices(&env, &token.address, 200);
+    client.create_event(&organizer, &1, &prices, &100, &true, &0);
+
+    let err = client
+        .try_check_in(&organizer, &1, &attendee)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::NotRegistered);
+}
+
+#[test]
 fn test_self_refund_before_deadline_succeeds() {
     let env = Env::default();
     env.mock_all_auths();
@@ -263,7 +312,6 @@ fn test_transfer_registration_from_no_longer_registered() {
 }
 
 #[test]
-#[should_panic(expected = "already registered")]
 fn test_transfer_registration_already_registered() {
     let env = Env::default();
     env.mock_all_auths();
@@ -284,9 +332,13 @@ fn test_transfer_registration_already_registered() {
 
     client.create_event(&organizer, &1, &prices, &100, &true, &0);
     client.register(&attendee, &1, &token.address);
-    client.register(&receiver, &1, &token.address); // receiver is already registered
+    client.register(&receiver, &1, &token.address);
 
-    client.transfer_registration(&attendee, &1, &receiver);
+    let err = client
+        .try_transfer_registration(&attendee, &1, &receiver)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::AlreadyRegistered);
 }
 
 #[test]
@@ -309,7 +361,6 @@ fn test_update_capacity_increases_and_decreases() {
 }
 
 #[test]
-#[should_panic(expected = "capacity cannot be below current registrations")]
 fn test_update_capacity_fails_below_registered() {
     let env = Env::default();
     env.mock_all_auths();
@@ -329,7 +380,11 @@ fn test_update_capacity_fails_below_registered() {
     client.create_event(&organizer, &1, &prices, &100, &true, &100);
     client.register(&attendee, &1, &token.address);
 
-    client.update_capacity(&organizer, &1, &0);
+    let err = client
+        .try_update_capacity(&organizer, &1, &0)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::CapacityBelowCurrentRegistrations);
 }
 
 #[test]
@@ -424,7 +479,6 @@ fn test_update_event_terms_before_registration_succeeds() {
 }
 
 #[test]
-#[should_panic(expected = "event already has registrations")]
 fn test_update_event_terms_after_registration_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -444,7 +498,11 @@ fn test_update_event_terms_after_registration_fails() {
     client.create_event(&organizer, &1, &prices, &100, &true, &100);
     client.register(&attendee, &1, &token.address);
 
-    client.update_event_terms(&organizer, &1, &prices, &true, &1000);
+    let err = client
+        .try_update_event_terms(&organizer, &1, &prices, &true, &1000)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::EventHasRegistrations);
 }
 
 #[test]
@@ -511,8 +569,7 @@ fn test_pause_and_unpause() {
 }
 
 #[test]
-#[should_panic(expected = "registered underflow")]
-fn test_registered_underflow_panics() {
+fn test_registered_underflow_returns_not_registered() {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -531,13 +588,15 @@ fn test_registered_underflow_panics() {
 
     client.register(&attendee, &1, &token.address);
 
-    // Artificially corrupt the state by setting registered to 0
     env.as_contract(&contract_id, || {
         let mut event: Event = env.storage().persistent().get(&DataKey::Event(1)).unwrap();
         event.registered = 0;
         env.storage().persistent().set(&DataKey::Event(1), &event);
     });
 
-    // Refunding the attendee will attempt to decrement 0 by 1, triggering the panic
-    client.refund(&attendee, &1, &attendee);
+    let err = client
+        .try_refund(&attendee, &1, &attendee)
+        .unwrap_err()
+        .unwrap();
+    assert_eq!(err, ContractError::NotRegistered);
 }

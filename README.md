@@ -33,6 +33,8 @@ All state-changing calls require on-chain authorization (`require_auth()`) from 
 │       │   └── test.rs     # unit tests
 │       ├── Cargo.toml
 │       └── Makefile
+├── scripts/
+│   └── local-network-e2e.ps1
 ├── Cargo.toml               # Rust workspace root
 └── README.md
 ```
@@ -41,12 +43,17 @@ All state-changing calls require on-chain authorization (`require_auth()`) from 
 
 Contract: `EventRegistration` — `contracts/registration/src/lib.rs`
 
+See [docs/resource-usage.md](./docs/resource-usage.md) for storage operation
+counts and the optimized duplicate check-in path. See
+[docs/architecture.md](./docs/architecture.md) for the storage-key structure
+proposal and compatibility considerations.
+
 | Function | Caller | Description |
 |---|---|---|
 | `create_event(organizer, event_id, price, token, capacity, self_refund_allowed, refund_deadline)` | organizer | Registers a new event. `price = 0` marks it free. `refund_deadline = 0` means no deadline on self-refunds. |
 | `register(attendee, event_id)` | attendee | Registers for an event. If `price > 0`, transfers payment from the attendee into contract escrow. |
 | `refund(caller, event_id, attendee)` | attendee or organizer | Refunds an attendee from escrow. Self-refund requires `self_refund_allowed` and (if set) must be before `refund_deadline`. Organizer can always refund. |
-| `check_in(organizer, event_id, attendee)` | organizer | Marks an attendee as checked in. |
+| `check_in(organizer, event_id, attendee)` | organizer | Marks a registered attendee as checked in; walk-ins are rejected. |
 | `payout(organizer, event_id)` | organizer | Withdraws the event's escrowed balance to the organizer. |
 
 ## Getting started
@@ -66,6 +73,33 @@ stellar contract build  # build the .wasm artifact
 ```
 
 The built contract is output to `target/wasm32v1-none/release/registration.wasm`.
+
+### Local network end-to-end test
+
+The unit tests use Soroban's in-memory `Env`. To exercise deployment and real CLI
+transactions against a local Stellar network, use the PowerShell script:
+
+```powershell
+.\scripts\local-network-e2e.ps1
+```
+
+Prerequisites:
+
+- Stellar CLI 26 or newer (`stellar --version`)
+- Rust and the `wasm32v1-none` target (see prerequisites above)
+- Docker running, with host port `8000` available
+- PowerShell 5.1 or newer
+
+The script starts a named local Stellar container, creates temporary CLI
+configuration and funded organizer/attendee identities, builds and deploys the
+registration contract and native asset contract, then invokes `create_event`,
+`register`, and `refund` through the CLI. The event charges one XLM and allows
+self-refunds, so the flow exercises escrow transfers. It stops the container
+that it started and removes the temporary CLI configuration when finished.
+
+The script does not modify your normal Stellar CLI configuration or identities.
+If it exits before completing, inspect the CLI error; the container is stopped
+and temporary configuration is removed in either case.
 
 ### Deploy to Testnet
 

@@ -81,6 +81,12 @@ impl EventRegistration {
             .unwrap_or(CONTRACT_VERSION)
     }
 
+    pub fn is_registered(env: Env, event_id: u32, attendee: Address) -> bool {
+        env.storage()
+            .persistent()
+            .has(&DataKey::Registered(event_id, attendee))
+    }
+
     pub fn pause(env: Env, admin: Address) -> Result<(), ContractError> {
         admin.require_auth();
         let stored_admin: Address = env

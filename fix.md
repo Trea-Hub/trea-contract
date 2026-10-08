@@ -1,5 +1,6 @@
-Description: Measure and document the CPU instructions and resource fees for each contract function using the Stellar CLI's simulation output, so cost regressions can be caught in review.
+Description: Add a function to check whether a given address is registered for a given event, without needing to know internal storage keys.
 Acceptance Criteria:
 
-docs/benchmarks.md lists approximate resource cost for create_event, register, refund, check_in, payout
-Instructions included for how to reproduce the measurement locally
+is_registered(env: Env, event_id: u32, attendee: Address) -> bool is added
+Returns false (not a panic) when no registration exists
+Test covers both registered and unregistered cases

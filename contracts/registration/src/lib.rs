@@ -31,6 +31,9 @@ pub enum ContractError {
     NotInitialized = 9,
     NotAdmin = 10,
     UnsupportedToken = 11,
+    AlreadyRegistered = 12,
+    EventHasRegistrations = 13,
+    CapacityBelowCurrentRegistrations = 14,
 }
 
 #[contracttype]
@@ -59,6 +62,7 @@ pub struct EventRegistration;
 #[allow(deprecated)]
 impl EventRegistration {
     pub fn init(env: Env, admin: Address) {
+        admin.require_auth();
         assert!(
             !env.storage().instance().has(&DataKey::Admin),
             "already initialized"
@@ -113,8 +117,9 @@ impl EventRegistration {
         capacity: u32,
         self_refund_allowed: bool,
         refund_deadline: u64,
-    ) {
+    ) -> Result<(), ContractError> {
         organizer.require_auth();
+        ensure_not_paused(&env)?;
         let event = Event {
             organizer: organizer.clone(),
             token_prices,
@@ -128,6 +133,14 @@ impl EventRegistration {
             .set(&DataKey::Event(event_id), &event);
         env.events()
             .publish((Symbol::new(&env, "create_event"), event_id), organizer);
+        Ok(())
+    }
+
+    pub fn get_event(env: Env, event_id: u32) -> Event {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Event(event_id))
+            .expect("event not found")
     }
 
     pub fn update_event_terms(
@@ -139,6 +152,7 @@ impl EventRegistration {
         refund_deadline: u64,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
+        ensure_not_paused(&env)?;
         let mut event: Event = env
             .storage()
             .persistent()
@@ -148,7 +162,9 @@ impl EventRegistration {
         if !caller_is_organizer(&event, &organizer) {
             return Err(ContractError::NotOrganizer);
         }
-        assert!(event.registered == 0, "event already has registrations");
+        if event.registered != 0 {
+            return Err(ContractError::EventHasRegistrations);
+        }
 
         event.token_prices = token_prices;
         event.self_refund_allowed = self_refund_allowed;
@@ -167,6 +183,7 @@ impl EventRegistration {
         new_capacity: u32,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
+        ensure_not_paused(&env)?;
         let mut event: Event = env
             .storage()
             .persistent()
@@ -177,10 +194,9 @@ impl EventRegistration {
             return Err(ContractError::NotOrganizer);
         }
 
-        assert!(
-            new_capacity >= event.registered,
-            "capacity cannot be below current registrations"
-        );
+        if new_capacity < event.registered {
+            return Err(ContractError::CapacityBelowCurrentRegistrations);
+        }
 
         event.capacity = new_capacity;
         env.storage()
@@ -189,6 +205,8 @@ impl EventRegistration {
         Ok(())
     }
 
+    // Only registered attendees may be checked in; walk-ins are rejected. Repeated
+    // check-ins for a registered attendee are intentionally idempotent.
     pub fn check_in(
         env: Env,
         organizer: Address,
@@ -196,6 +214,34 @@ impl EventRegistration {
         attendee: Address,
     ) -> Result<(), ContractError> {
         organizer.require_auth();
+        ensure_not_paused(&env)?;
+
+        let event: Event = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Event(event_id))
+            .ok_or(ContractError::EventNotFound)?;
+
+        if !caller_is_organizer(&event, &organizer) {
+            return Err(ContractError::NotOrganizer);
+        }
+        // Refund and transfer remove both registration and check-in records, so an
+        // existing check-in record proves the attendee is still registered.
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::CheckedIn(event_id, attendee.clone()))
+        {
+            return Ok(());
+        }
+        if !env
+            .storage()
+            .persistent()
+            .has(&DataKey::Registered(event_id, attendee.clone()))
+        {
+            return Err(ContractError::NotRegistered);
+        }
+
         env.storage()
             .persistent()
             .set(&DataKey::CheckedIn(event_id, attendee.clone()), &true);
@@ -210,14 +256,7 @@ impl EventRegistration {
         event_id: u32,
         payment_token: Address,
     ) -> Result<(), ContractError> {
-        let is_paused: bool = env
-            .storage()
-            .instance()
-            .get(&DataKey::Paused)
-            .unwrap_or(false);
-        if is_paused {
-            return Err(ContractError::Paused);
-        }
+        ensure_not_paused(&env)?;
 
         attendee.require_auth();
         let mut event: Event = env
@@ -225,6 +264,10 @@ impl EventRegistration {
             .persistent()
             .get(&DataKey::Event(event_id))
             .ok_or(ContractError::EventNotFound)?;
+
+        if env.storage().persistent().has(&DataKey::Registered(event_id, attendee.clone())) {
+            return Err(ContractError::AlreadyRegistered);
+        }
 
         if event.registered >= event.capacity {
             return Err(ContractError::EventFull);
@@ -267,6 +310,7 @@ impl EventRegistration {
         attendee: Address,
     ) -> Result<(), ContractError> {
         caller.require_auth();
+        ensure_not_paused(&env)?;
 
         let mut event: Event = env
             .storage()
@@ -300,6 +344,10 @@ impl EventRegistration {
             client.transfer(&contract_address, &attendee, &payment.amount);
         }
 
+        if event.registered == 0 {
+            return Err(ContractError::NotRegistered);
+        }
+
         event.registered = event
             .registered
             .checked_sub(1)
@@ -310,6 +358,9 @@ impl EventRegistration {
         env.storage()
             .persistent()
             .remove(&DataKey::Registered(event_id, attendee.clone()));
+        env.storage()
+            .persistent()
+            .remove(&DataKey::CheckedIn(event_id, attendee.clone()));
         env.events()
             .publish((Symbol::new(&env, "refund"), event_id), attendee);
 
@@ -323,6 +374,7 @@ impl EventRegistration {
         to: Address,
     ) -> Result<(), ContractError> {
         from.require_auth();
+        ensure_not_paused(&env)?;
 
         let payment: Payment = env
             .storage()
@@ -330,16 +382,16 @@ impl EventRegistration {
             .get(&DataKey::Registered(event_id, from.clone()))
             .ok_or(ContractError::NotRegistered)?;
 
-        assert!(
-            !env.storage()
-                .persistent()
-                .has(&DataKey::Registered(event_id, to.clone())),
-            "already registered"
-        );
+        if env.storage().persistent().has(&DataKey::Registered(event_id, to.clone())) {
+            return Err(ContractError::AlreadyRegistered);
+        }
 
         env.storage()
             .persistent()
-            .remove(&DataKey::Registered(event_id, from));
+            .remove(&DataKey::Registered(event_id, from.clone()));
+        env.storage()
+            .persistent()
+            .remove(&DataKey::CheckedIn(event_id, from.clone()));
         env.storage()
             .persistent()
             .set(&DataKey::Registered(event_id, to), &payment);
@@ -349,6 +401,7 @@ impl EventRegistration {
 
     pub fn payout(env: Env, organizer: Address, event_id: u32) -> Result<(), ContractError> {
         organizer.require_auth();
+        ensure_not_paused(&env)?;
         let event: Event = env
             .storage()
             .persistent()
@@ -367,6 +420,15 @@ impl EventRegistration {
                 client.transfer(&contract_address, &organizer, &balance);
             }
         }
+        Ok(())
+    }
+}
+
+fn ensure_not_paused(env: &Env) -> Result<(), ContractError> {
+    let is_paused: bool = env.storage().instance().get(&DataKey::Paused).unwrap_or(false);
+    if is_paused {
+        Err(ContractError::Paused)
+    } else {
         Ok(())
     }
 }

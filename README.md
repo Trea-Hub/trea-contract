@@ -106,15 +106,33 @@ and temporary configuration is removed in either case.
 
 ### Deploy to Testnet
 
-```bash
-stellar keys generate --global trea-deployer --network testnet --fund
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/registration.wasm \
-  --source trea-deployer \
-  --network testnet
+Set `STELLAR_SOURCE_ACCOUNT` to a configured Stellar CLI identity, or pass
+`-SourceAccount` directly. The script builds the contract, deploys it to
+Testnet, and prints the resulting contract ID:
+
+```powershell
+.\scripts\deploy-testnet.ps1 -SourceAccount trea-deployer
 ```
 
-This returns a contract ID you can call directly via the CLI or wire up to a frontend.
+To save the contract ID locally, use `-SaveContractId`. By default, it is
+written to `.stellar/registration-testnet-contract-id`, which is ignored by
+Git. You can choose a different destination with `-ContractIdFile`:
+
+```powershell
+stellar keys generate trea-deployer --network testnet --fund
+```
+
+```powershell
+.\scripts\deploy-testnet.ps1 -SourceAccount trea-deployer -SaveContractId
+.\scripts\deploy-testnet.ps1 `
+  -SourceAccount trea-deployer `
+  -SaveContractId `
+  -ContractIdFile .stellar\registration-contract-id.txt
+```
+
+The resulting ID can be used to call the contract via the CLI or wire it up to a
+frontend. This script submits a live Testnet deployment transaction each time
+it runs.
 
 ## Related repos
 

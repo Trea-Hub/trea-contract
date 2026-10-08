@@ -23,6 +23,11 @@ jobs:
           targets: wasm32v1-none
           components: rustfmt
 
+      - name: Install Stellar CLI system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes pkg-config libdbus-1-dev
+
       - name: Install Stellar CLI
         run: cargo install --locked stellar-cli --version 26.1.0
 

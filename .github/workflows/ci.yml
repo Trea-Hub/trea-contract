@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Rust and Soroban checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+          components: rustfmt
+
+      - name: Install Stellar CLI system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes pkg-config libdbus-1-dev libudev-dev
+
+      - name: Install Stellar CLI
+        run: cargo install --locked stellar-cli --version 26.1.0
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Build Soroban contract
+        working-directory: contracts/registration
+        run: stellar contract build

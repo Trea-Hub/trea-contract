@@ -81,7 +81,7 @@ fn test_randomized_registration_refund_invariants() {
             let can_refund = !active_indices.is_empty();
 
             let do_register = match (can_register, can_refund) {
-                (true, true) => next_random(&mut random_state) % 2 == 0,
+                (true, true) => next_random(&mut random_state) & 1 == 0,
                 (true, false) => true,
                 (false, true) => false,
                 (false, false) => continue,
@@ -91,7 +91,7 @@ fn test_randomized_registration_refund_invariants() {
                 let index = inactive_indices
                     [next_random(&mut random_state) as usize % inactive_indices.len()];
                 let attendee = &attendees[index];
-                let payment_token = if index % 2 == 0 {
+                let payment_token = if index & 1 == 0 {
                     &token_a.address
                 } else {
                     &token_b.address
@@ -163,6 +163,47 @@ fn test_contract_version_is_recorded_on_init() {
     client.init(&admin);
 
     assert_eq!(client.version(), 1);
+}
+
+#[test]
+fn test_is_registered_returns_true_for_registered_attendee() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let organizer = Address::generate(&env);
+    let attendee = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token, token_admin_client) = create_token_contract(&env, &token_admin);
+
+    token_admin_client.mint(&attendee, &1000);
+    let prices = create_token_prices(&env, &token.address, 200);
+
+    client.create_event(&organizer, &1, &prices, &100, &true, &0);
+    client.register(&attendee, &1, &token.address);
+
+    assert!(client.is_registered(&1, &attendee));
+}
+
+#[test]
+fn test_is_registered_returns_false_for_unregistered_attendee() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let organizer = Address::generate(&env);
+    let attendee = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token, _) = create_token_contract(&env, &token_admin);
+    let prices = create_token_prices(&env, &token.address, 200);
+
+    client.create_event(&organizer, &1, &prices, &100, &true, &0);
+
+    assert!(!client.is_registered(&1, &attendee));
 }
 
 #[test]
@@ -469,7 +510,7 @@ fn test_get_event_returns_stored_event() {
     let event = client.get_event(&42);
     assert_eq!(event.organizer, organizer);
     assert_eq!(event.capacity, 10);
-    assert_eq!(event.self_refund_allowed, true);
+    assert!(event.self_refund_allowed);
     assert_eq!(event.refund_deadline, 9_999_999_999);
     assert_eq!(event.registered, 0);
 }

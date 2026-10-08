@@ -1,5 +1,7 @@
 # Trea Contract
 
+[![CI](https://github.com/Trea-Hub/trea-contract/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Trea-Hub/trea-contract/actions/workflows/ci.yml)
+
 Smart contract powering **Trea**, an event registration and ticketing platform built on **Stellar** and **Soroban**. This repo contains only the on-chain logic — registration, payment escrow, refunds, and attendance check-in. The backend and frontend live in separate repos.
 
 > Status: core contract logic implemented and unit tested against a local Soroban test environment. Testnet deployment is the next step.
@@ -46,7 +48,8 @@ Contract: `EventRegistration` — `contracts/registration/src/lib.rs`
 See [docs/resource-usage.md](./docs/resource-usage.md) for storage operation
 counts and the optimized duplicate check-in path. See
 [docs/architecture.md](./docs/architecture.md) for the storage-key structure
-proposal and compatibility considerations.
+proposal and compatibility considerations. See [docs/clippy.md](./docs/clippy.md)
+for the lint policy and documented exceptions.
 
 | Function | Caller | Description |
 |---|---|---|
@@ -103,15 +106,46 @@ and temporary configuration is removed in either case.
 
 ### Deploy to Testnet
 
-```bash
-stellar keys generate --global trea-deployer --network testnet --fund
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/registration.wasm \
-  --source trea-deployer \
-  --network testnet
+Set `STELLAR_SOURCE_ACCOUNT` to a configured Stellar CLI identity, or pass
+`-SourceAccount` directly. The script builds the contract, deploys it to
+Testnet, and prints the resulting contract ID:
+
+```powershell
+.\scripts\deploy-testnet.ps1 -SourceAccount trea-deployer
 ```
 
-This returns a contract ID you can call directly via the CLI or wire up to a frontend.
+To save the contract ID locally, use `-SaveContractId`. By default, it is
+written to `.stellar/registration-testnet-contract-id`, which is ignored by
+Git. You can choose a different destination with `-ContractIdFile`:
+
+```powershell
+stellar keys generate trea-deployer --network testnet --fund
+```
+
+```powershell
+.\scripts\deploy-testnet.ps1 -SourceAccount trea-deployer -SaveContractId
+.\scripts\deploy-testnet.ps1 `
+  -SourceAccount trea-deployer `
+  -SaveContractId `
+  -ContractIdFile .stellar\registration-contract-id.txt
+```
+
+The resulting ID can be used to call the contract via the CLI or wire it up to a
+frontend. This script submits a live Testnet deployment transaction each time
+it runs.
+
+### Testnet demo
+
+To generate funded Testnet identities, deploy the native asset and registration
+contracts, create a sample event, and register two attendees in one command:
+
+```powershell
+.\scripts\testnet-demo.ps1
+```
+
+See [docs/demo.md](./docs/demo.md) for prerequisites, expected Testnet
+transactions, and the identities and contract IDs printed by the script. Each
+run creates new identities and submits transactions to the public Testnet.
 
 ## Related repos
 

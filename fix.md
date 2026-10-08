@@ -1,5 +1,5 @@
-Description: There's currently no plan for how the contract will be upgraded post-Mainnet-deploy without losing existing event data. Document (and if feasible, implement scaffolding for) a versioning/migration approach.
+Description: Add a CODEOWNERS file so PRs automatically request review from the right maintainer(s).
 Acceptance Criteria:
 
-docs/upgrades.md explains the chosen strategy (e.g. Soroban's upgrade mechanism, or a deliberate immutable-and-redeploy approach)
-If code changes are needed, they're implemented and tested
+.github/CODEOWNERS is added covering at minimum src/ and the workflow files
+Verified a test PR requests the correct reviewer automatically

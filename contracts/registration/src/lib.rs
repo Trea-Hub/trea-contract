@@ -268,7 +268,11 @@ impl EventRegistration {
             .get(&DataKey::Event(event_id))
             .ok_or(ContractError::EventNotFound)?;
 
-        if env.storage().persistent().has(&DataKey::Registered(event_id, attendee.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Registered(event_id, attendee.clone()))
+        {
             return Err(ContractError::AlreadyRegistered);
         }
 
@@ -385,7 +389,11 @@ impl EventRegistration {
             .get(&DataKey::Registered(event_id, from.clone()))
             .ok_or(ContractError::NotRegistered)?;
 
-        if env.storage().persistent().has(&DataKey::Registered(event_id, to.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&DataKey::Registered(event_id, to.clone()))
+        {
             return Err(ContractError::AlreadyRegistered);
         }
 
@@ -439,7 +447,11 @@ fn load_event(env: &Env, event_id: u32) -> Event {
 }
 
 fn ensure_not_paused(env: &Env) -> Result<(), ContractError> {
-    let is_paused: bool = env.storage().instance().get(&DataKey::Paused).unwrap_or(false);
+    let is_paused: bool = env
+        .storage()
+        .instance()
+        .get(&DataKey::Paused)
+        .unwrap_or(false);
     if is_paused {
         Err(ContractError::Paused)
     } else {

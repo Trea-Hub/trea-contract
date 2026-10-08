@@ -1,5 +1,7 @@
 # Trea Contract
 
+[![CI](https://github.com/Trea-Hub/trea-contract/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Trea-Hub/trea-contract/actions/workflows/ci.yml)
+
 Smart contract powering **Trea**, an event registration and ticketing platform built on **Stellar** and **Soroban**. This repo contains only the on-chain logic — registration, payment escrow, refunds, and attendance check-in. The backend and frontend live in separate repos.
 
 > Status: core contract logic implemented and unit tested against a local Soroban test environment. Testnet deployment is the next step.

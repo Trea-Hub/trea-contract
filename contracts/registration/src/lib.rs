@@ -143,10 +143,7 @@ impl EventRegistration {
     }
 
     pub fn get_event(env: Env, event_id: u32) -> Event {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Event(event_id))
-            .expect("event not found")
+        load_event(&env, event_id)
     }
 
     pub fn update_event_terms(
@@ -428,6 +425,17 @@ impl EventRegistration {
         }
         Ok(())
     }
+}
+
+fn load_event(env: &Env, event_id: u32) -> Event {
+    env.storage()
+        .persistent()
+        .get(&DataKey::Event(event_id))
+        .unwrap_or_else(|| {
+            panic!(
+                "event lookup failed for event_id {event_id}: event is not present in persistent storage"
+            )
+        })
 }
 
 fn ensure_not_paused(env: &Env) -> Result<(), ContractError> {

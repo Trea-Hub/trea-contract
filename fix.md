@@ -1,6 +1,6 @@
-Description: Add a function to check whether a given address is registered for a given event, without needing to know internal storage keys.
+Description: Multiple functions repeat env.storage().persistent().get(&DataKey::Event(event_id)).unwrap(). Extract this into a small private helper function with a clear error message.
 Acceptance Criteria:
 
-is_registered(env: Env, event_id: u32, attendee: Address) -> bool is added
-Returns false (not a panic) when no registration exists
-Test covers both registered and unregistered cases
+A private fn load_event(env: &Env, event_id: u32) -> Event helper is added and used everywhere applicable
+Error message is more descriptive than the default unwrap panic
+Tests still pass unchanged

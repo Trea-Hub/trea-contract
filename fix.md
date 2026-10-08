@@ -1,6 +1,6 @@
-Description: For demoing or manual testing, add a script that generates a few funded Testnet identities (organizer, two attendees), deploys the contract, creates a sample event, and registers the attendees — useful for reviewers and new contributors.
+Description: Add a pre-commit hook (or documented git hook setup) so contributors can't accidentally commit unformatted code.
 Acceptance Criteria:
 
-A single script produces a working demo state on Testnet from a clean checkout
-Output clearly prints the contract ID and identities used
-Documented in README or docs/demo.md
+A .pre-commit-config or simple git hook script is added
+CONTRIBUTING.md is updated with setup instructions
+Hook runs cargo fmt --check and blocks commit on failure

@@ -84,6 +84,10 @@ This returns a contract ID you can call directly via the CLI or wire up to a fro
 - Backend (API, event metadata, photo uploads) — https://github.com/Trea-Hub/trea-backend/
 - Frontend (event discovery, registration flow, wallet connect) — https://github.com/Trea-Hub/trea-frontend
 
+## Upgrade and migration strategy
+
+We use an upgradeable contract strategy rather than a destructive `immutable + redeploy` model. Soroban contracts keep persistent storage under the same contract ID across code upgrades, so event records remain intact as long as the storage keys remain compatible. The migration plan is documented in [docs/upgrades.md](./docs/upgrades.md).
+
 ## Roadmap
 
 - [x] Core contract: create event, register, refund, check-in, payout

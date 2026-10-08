@@ -24,6 +24,20 @@ fn create_token_prices(env: &Env, token: &Address, price: i128) -> Map<Address, 
 }
 
 #[test]
+fn test_contract_version_is_recorded_on_init() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let contract_id = env.register(EventRegistration, ());
+    let client = EventRegistrationClient::new(&env, &contract_id);
+
+    let admin = Address::generate(&env);
+    client.init(&admin);
+
+    assert_eq!(client.version(), 1);
+}
+
+#[test]
 fn test_free_event_register_and_checkin() {
     let env = Env::default();
     env.mock_all_auths();

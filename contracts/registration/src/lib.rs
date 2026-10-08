@@ -47,7 +47,10 @@ pub enum DataKey {
     CheckedIn(u32, Address),
     Admin,
     Paused,
+    Version,
 }
+
+const CONTRACT_VERSION: u32 = 1;
 
 #[contract]
 pub struct EventRegistration;
@@ -62,6 +65,16 @@ impl EventRegistration {
         );
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Paused, &false);
+        env.storage()
+            .instance()
+            .set(&DataKey::Version, &CONTRACT_VERSION);
+    }
+
+    pub fn version(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DataKey::Version)
+            .unwrap_or(CONTRACT_VERSION)
     }
 
     pub fn pause(env: Env, admin: Address) -> Result<(), ContractError> {

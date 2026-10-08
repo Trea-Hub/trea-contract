@@ -134,6 +134,19 @@ The resulting ID can be used to call the contract via the CLI or wire it up to a
 frontend. This script submits a live Testnet deployment transaction each time
 it runs.
 
+### Testnet demo
+
+To generate funded Testnet identities, deploy the native asset and registration
+contracts, create a sample event, and register two attendees in one command:
+
+```powershell
+.\scripts\testnet-demo.ps1
+```
+
+See [docs/demo.md](./docs/demo.md) for prerequisites, expected Testnet
+transactions, and the identities and contract IDs printed by the script. Each
+run creates new identities and submits transactions to the public Testnet.
+
 ## Related repos
 
 - Backend (API, event metadata, photo uploads) — https://github.com/Trea-Hub/trea-backend/

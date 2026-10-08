@@ -1,6 +1,6 @@
-Description: Deploying to Testnet currently requires remembering several CLI flags. Add a make deploy-testnet (or equivalent script) that wraps the build + deploy commands.
+Description: For demoing or manual testing, add a script that generates a few funded Testnet identities (organizer, two attendees), deploys the contract, creates a sample event, and registers the attendees — useful for reviewers and new contributors.
 Acceptance Criteria:
 
-Running one command builds and deploys to Testnet using a configurable source identity
-The resulting contract ID is printed and optionally saved to a local file
-README is updated to reference the new command
+A single script produces a working demo state on Testnet from a clean checkout
+Output clearly prints the contract ID and identities used
+Documented in README or docs/demo.md

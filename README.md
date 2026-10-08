@@ -48,7 +48,8 @@ Contract: `EventRegistration` — `contracts/registration/src/lib.rs`
 See [docs/resource-usage.md](./docs/resource-usage.md) for storage operation
 counts and the optimized duplicate check-in path. See
 [docs/architecture.md](./docs/architecture.md) for the storage-key structure
-proposal and compatibility considerations.
+proposal and compatibility considerations. See [docs/clippy.md](./docs/clippy.md)
+for the lint policy and documented exceptions.
 
 | Function | Caller | Description |
 |---|---|---|

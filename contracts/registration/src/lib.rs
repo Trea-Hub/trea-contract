@@ -1,8 +1,8 @@
 #![no_std]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::too_many_arguments)] // The public contract ABI includes methods with multiple required arguments.
+#![allow(clippy::needless_borrows_for_generic_args)] // Soroban contract-client calls follow the SDK's reference-based argument convention.
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, token, Address, Env, Map, Symbol,
+    contract, contracterror, contractevent, contractimpl, contracttype, token, Address, Env, Map,
 };
 
 #[contracttype]
@@ -14,6 +14,27 @@ pub struct Event {
     pub registered: u32,
     pub self_refund_allowed: bool,
     pub refund_deadline: u64,
+}
+
+#[contractevent(topics = ["create_event"], data_format = "single-value")]
+pub struct EventCreated {
+    #[topic]
+    pub event_id: u32,
+    pub organizer: Address,
+}
+
+#[contractevent(topics = ["check_in"], data_format = "single-value")]
+pub struct AttendeeCheckedIn {
+    #[topic]
+    pub event_id: u32,
+    pub attendee: Address,
+}
+
+#[contractevent(topics = ["refund"], data_format = "single-value")]
+pub struct AttendeeRefunded {
+    #[topic]
+    pub event_id: u32,
+    pub attendee: Address,
 }
 
 #[contracterror]
@@ -59,7 +80,6 @@ const CONTRACT_VERSION: u32 = 1;
 pub struct EventRegistration;
 
 #[contractimpl]
-#[allow(deprecated)]
 impl EventRegistration {
     pub fn init(env: Env, admin: Address) {
         admin.require_auth();
@@ -137,8 +157,11 @@ impl EventRegistration {
         env.storage()
             .persistent()
             .set(&DataKey::Event(event_id), &event);
-        env.events()
-            .publish((Symbol::new(&env, "create_event"), event_id), organizer);
+        EventCreated {
+            event_id,
+            organizer,
+        }
+        .publish(&env);
         Ok(())
     }
 
@@ -248,8 +271,7 @@ impl EventRegistration {
         env.storage()
             .persistent()
             .set(&DataKey::CheckedIn(event_id, attendee.clone()), &true);
-        env.events()
-            .publish((Symbol::new(&env, "check_in"), event_id), attendee);
+        AttendeeCheckedIn { event_id, attendee }.publish(&env);
         Ok(())
     }
 
@@ -286,7 +308,7 @@ impl EventRegistration {
             .ok_or(ContractError::UnsupportedToken)?;
 
         if price > 0 {
-            let client = token::Client::new(&env, &payment_token);
+            let client = token::TokenClient::new(&env, &payment_token);
             let contract_address = env.current_contract_address();
             client.transfer(&attendee, &contract_address, &price);
         }
@@ -346,7 +368,7 @@ impl EventRegistration {
         }
 
         if payment.amount > 0 {
-            let client = token::Client::new(&env, &payment.token);
+            let client = token::TokenClient::new(&env, &payment.token);
             let contract_address = env.current_contract_address();
             client.transfer(&contract_address, &attendee, &payment.amount);
         }
@@ -368,8 +390,7 @@ impl EventRegistration {
         env.storage()
             .persistent()
             .remove(&DataKey::CheckedIn(event_id, attendee.clone()));
-        env.events()
-            .publish((Symbol::new(&env, "refund"), event_id), attendee);
+        AttendeeRefunded { event_id, attendee }.publish(&env);
 
         Ok(())
     }
@@ -424,7 +445,7 @@ impl EventRegistration {
         }
 
         for token in event.token_prices.keys() {
-            let client = token::Client::new(&env, &token);
+            let client = token::TokenClient::new(&env, &token);
             let contract_address = env.current_contract_address();
             let balance = client.balance(&contract_address);
             if balance > 0 {

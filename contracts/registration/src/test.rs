@@ -81,7 +81,7 @@ fn test_randomized_registration_refund_invariants() {
             let can_refund = !active_indices.is_empty();
 
             let do_register = match (can_register, can_refund) {
-                (true, true) => next_random(&mut random_state) % 2 == 0,
+                (true, true) => next_random(&mut random_state) & 1 == 0,
                 (true, false) => true,
                 (false, true) => false,
                 (false, false) => continue,
@@ -91,7 +91,7 @@ fn test_randomized_registration_refund_invariants() {
                 let index = inactive_indices
                     [next_random(&mut random_state) as usize % inactive_indices.len()];
                 let attendee = &attendees[index];
-                let payment_token = if index % 2 == 0 {
+                let payment_token = if index & 1 == 0 {
                     &token_a.address
                 } else {
                     &token_b.address
@@ -510,7 +510,7 @@ fn test_get_event_returns_stored_event() {
     let event = client.get_event(&42);
     assert_eq!(event.organizer, organizer);
     assert_eq!(event.capacity, 10);
-    assert_eq!(event.self_refund_allowed, true);
+    assert!(event.self_refund_allowed);
     assert_eq!(event.refund_deadline, 9_999_999_999);
     assert_eq!(event.registered, 0);
 }

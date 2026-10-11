@@ -35,6 +35,25 @@ stellar contract build
 
 If `cargo test` fails on a clean checkout, that's a bug worth opening an issue for before you start other work.
 
+### Install the pre-commit formatting hook
+
+To have Git check formatting before each commit, configure this repository to
+use its checked-in hooks directory:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The pre-commit hook runs `cargo fmt --all -- --check` from the repository root
+and blocks the commit if formatting fails. Fix formatting with
+`cargo fmt --all`, then retry the commit. To run the same check manually:
+
+```bash
+cargo fmt --all -- --check
+```
+
+The hook is opt-in and only changes this clone's Git configuration.
+
 ## Branching and commits
 
 - Branch off `main`: `git checkout -b feat/short-description` or `fix/short-description`.
